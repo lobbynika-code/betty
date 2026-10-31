@@ -1,0 +1,9 @@
+{
+  "name": "betty-classroom",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Betty live classroom powered by LiveKit",
+  "dependencies": {
+    "livekit-server-sdk": "^2.13.3"
+  }
+}

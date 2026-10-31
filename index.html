@@ -29,7 +29,7 @@
 @media(max-width:600px){.stage video.local-self-preview{width:clamp(84px,27%,145px);bottom:10px;left:10px}.stage.has-screen-share video.remote-track.camera-track{width:clamp(90px,27%,145px);right:10px;bottom:10px}.stage.has-screen-share video.local-self-preview{left:10px;bottom:10px}}
 #lessonNotes{font-family:inherit}.student-mode .stage video.remote-track{object-fit:contain}.stage audio{display:none}\n
 .room-choice-backdrop{position:fixed;inset:0;z-index:30;background:#172117a8;backdrop-filter:blur(7px);display:none;place-items:center;padding:20px}.room-choice-backdrop.open{display:grid}.room-choice{width:min(100%,460px);background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:28px;box-shadow:0 24px 90px #0003}.room-choice .kicker{font-size:10px}.room-choice h2{font:500 32px/1.1 Georgia,serif;letter-spacing:-.8px;margin:14px 0 10px}.room-choice p{font-size:13px;line-height:1.7;color:var(--muted);margin:0}.room-choice-code{display:inline-block;margin-top:15px;border-radius:9px;padding:8px 11px;background:#f2f0e9;font-size:11px;color:#4e5e4c;font-weight:800;letter-spacing:1px}.room-choice-actions{display:grid;gap:10px;margin-top:22px}.room-choice-actions .btn{width:100%;justify-content:center}.room-choice-actions .btn-light{background:transparent}
- .student-mode .topbar,.student-mode .sidebar,.student-mode footer.bottom,.student-mode .hero-actions{display:none!important}.student-mode .wrap{max-width:1050px}.student-mode .hero{padding-top:36px}.student-mode .main-grid{grid-template-columns:minmax(0,1fr);max-width:100%}.student-mode .room-card{width:100%}.student-mode .hero h1{max-width:700px}.student-mode .hero p{max-width:620px}.student-mode .teacher-only{display:none!important}
+ .student-mode .sidebar,.student-mode footer.bottom,.student-mode .hero-actions{display:none!important}.student-mode .topbar{display:flex!important}.student-mode .nav>a{display:none!important}.student-mode .profile{display:flex!important;border-left:0;padding-left:0}.student-mode .profile-avatar{display:grid!important}.student-mode .wrap{max-width:1050px}.student-mode .hero{padding-top:36px}.student-mode .main-grid{grid-template-columns:minmax(0,1fr);max-width:100%}.student-mode .room-card{width:100%}.student-mode .hero h1{max-width:700px}.student-mode .hero p{max-width:620px}.student-mode .teacher-only{display:none!important}
 </style>
 </head>
 <body><div class="wrap">
@@ -63,6 +63,10 @@ if (studentMode) {
   if (heroTitle) heroTitle.innerHTML = 'Welcome, <em>Betty.</em><br>Let’s learn together.';
   if (heroCopy) heroCopy.textContent = "Your classroom is ready. Join the lesson here, watch your teacher’s screen, and ask questions whenever you need to.";
   if (heroKicker) heroKicker.textContent = "Your learning space";
+  const profileName = document.querySelector(".profile strong");
+  const profileRole = document.querySelector(".profile span");
+  if (profileName) profileName.textContent = "Betty";
+  if (profileRole) profileRole.textContent = "Student";
 }
 const savedRoomCode = (() => { try { return localStorage.getItem("betty-teacher-room-code"); } catch (error) { return null; } })();
 let roomCode = params.get("room") || savedRoomCode || Math.random().toString(36).slice(2, 8).toUpperCase();

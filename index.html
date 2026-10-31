@@ -13,7 +13,7 @@
 .student-mode .student-notice{display:block}
 .student-notice{display:none;margin:0 0 14px;padding:13px 15px;border-radius:12px;background:#fff3df;border:1px solid #f0dfbf;color:#78582b;font-size:12px;line-height:1.65}
 @media(max-width:600px){.student-mode .stage{min-height:360px}}
-</style>
+.stage video.remote-track{display:block;z-index:4;background:#18231b}.stage video.remote-track.camera-track{z-index:3}.stage video.remote-track.screen-track{z-index:4;object-fit:contain}.student-mode .stage video.remote-track{object-fit:contain}.stage audio{display:none}\n</style>
 </head>
 <body><div class="wrap">
 <header class="topbar"><a class="brand" href="#" aria-label="Betty home"><div class="mark">b.</div><div>betty<small>LEARN BEAUTIFULLY</small></div></a><nav class="nav"><a href="#room">Classroom</a><a href="#people">People</a><div class="profile"><div class="profile-avatar">Y</div><div><strong>Your classroom</strong><span>Teacher account</span></div></div></nav></header>
@@ -24,19 +24,280 @@
 <section class="side-card"><div class="side-heading"><h3>Little lesson notes</h3><span class="count">NOTES</span></div><div class="chat-preview"><div class="chat-symbol">✎</div><p id="notesText">Keep your key ideas nearby. A shared live chat and lesson notes are coming in the next version.</p></div></section>
 <div class="tip"><strong>✳ A gentle reminder</strong><span>Your browser will ask permission before turning on your camera, microphone, or screen share. You stay in control.</span></div></aside></main>
 <footer class="bottom"><span>Made with care, just for Betty <b>♥</b></span><span>BETTY CLASSROOM &nbsp;·&nbsp; LEARN AT YOUR OWN PACE</span></footer></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script>
-const $=id=>document.getElementById(id);let stream=null,screenStream=null,started=false,micOn=false,cameraOn=false;
-const params=new URLSearchParams(location.search);const studentMode=params.get('role')==='student';const room=params.get('room')||Math.random().toString(36).slice(2,8).toUpperCase();const invite=new URL(location.href);invite.searchParams.set('room',room);invite.searchParams.set('role','student');$('inviteLink').value=invite.href;
-if(studentMode){document.body.classList.add('student-mode');document.title='Join lesson · Betty';document.querySelector('.profile strong').textContent='Student view';document.querySelector('.profile span').textContent='Joined lesson';document.querySelector('.kicker').textContent='You’re in the right place';document.querySelector('h1').innerHTML='Welcome to the<br><em>lesson room.</em>';document.querySelector('.hero p').textContent='You’ve opened the invitation for room '+room+'. The student view is ready, but the live teacher connection still needs to be set up.';document.querySelector('.room-title').lastChild.textContent=' Lesson room · '+room;$('roomStatus').textContent='Waiting for teacher connection';$('welcome').querySelector('.eyebrow').textContent='Student classroom';$('welcome').querySelector('h2').textContent='Your lesson starts here.';$('welcome').querySelector('p').textContent='When live streaming is connected, the teacher’s shared screen and audio will appear in this space.';$('stageLabel').hidden=true;$('studentNotice').style.display='block';}
-function toast(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3000)}
-function showStream(s,label){$('preview').srcObject=s;$('preview').style.display='block';$('welcome').style.display='none';$('stageLabel').hidden=false;$('stageLabel').textContent='●  '+label}
-async function startLesson(){if(started)return;started=true;$('roomStatus').textContent='Room ready · '+room;$('statusDot').classList.add('on');$('youStatus').textContent='Lesson room is ready';$('startBtn').innerHTML='<span>✓</span> Lesson started';toast('Your classroom is ready. Invite Betty with your link.')}
-$('startBtn').addEventListener('click',startLesson);
-async function copyInvite(){try{await navigator.clipboard.writeText($('inviteLink').value);toast('Invite link copied. Send it to Betty!')}catch(e){$('inviteLink').focus();$('inviteLink').select();toast('Your link is selected — copy it to share with Betty.')}}
-$('copyBtn').addEventListener('click',copyInvite);$('copyTop').addEventListener('click',copyInvite);
-$('micBtn').addEventListener('click',async()=>{try{if(!started)await startLesson();if(!stream||!stream.getAudioTracks().length){const audio=await navigator.mediaDevices.getUserMedia({audio:true});if(stream)audio.getAudioTracks().forEach(t=>stream.addTrack(t));else stream=audio}micOn=!micOn;stream.getAudioTracks().forEach(t=>t.enabled=micOn);$('micBtn').classList.toggle('active',micOn);$('micBtn').innerHTML=micOn?'<span class="ico">♩</span> Mic on':'<span class="ico">♩</span> Microphone';toast(micOn?'Microphone is on':'Microphone is muted')}catch(e){toast('Microphone permission was not granted or is unavailable.')}});
-$('cameraBtn').addEventListener('click',async()=>{try{if(!started)await startLesson();if(!stream||!stream.getVideoTracks().length){const cam=await navigator.mediaDevices.getUserMedia({video:true});if(stream)cam.getVideoTracks().forEach(t=>stream.addTrack(t));else stream=cam}cameraOn=!cameraOn;stream.getVideoTracks().forEach(t=>t.enabled=cameraOn);if(cameraOn)showStream(stream,'CAMERA PREVIEW');else if(!screenStream){$('preview').style.display='none';$('welcome').style.display='block';$('stageLabel').hidden=true}$('cameraBtn').classList.toggle('active',cameraOn);$('cameraBtn').innerHTML=cameraOn?'<span class="ico">◉</span> Camera on':'<span class="ico">◉</span> Camera';}catch(e){toast('Camera permission was not granted or is unavailable.')}});
-$('shareBtn').addEventListener('click',async()=>{if(screenStream){stopShare();return}try{if(!started)await startLesson();if(!navigator.mediaDevices?.getDisplayMedia){toast('Screen sharing needs a supported browser and a secure HTTPS connection.');return}screenStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});showStream(screenStream,'SCREEN SHARING');$('shareBtn').classList.add('active');$('shareBtn').innerHTML='<span class="ico">▧</span> Stop sharing';screenStream.getVideoTracks()[0].addEventListener('ended',stopShare)}catch(e){toast('Screen sharing was cancelled or is unavailable.')}});
-function stopShare(){if(screenStream){screenStream.getTracks().forEach(t=>t.stop());screenStream=null}$('shareBtn').classList.remove('active');$('shareBtn').innerHTML='<span class="ico">▧</span> Share screen';if(cameraOn&&stream)showStream(stream,'CAMERA PREVIEW');else{$('preview').style.display='none';$('welcome').style.display='block';$('stageLabel').hidden=true}}
-$('endBtn').addEventListener('click',()=>{if(screenStream)screenStream.getTracks().forEach(t=>t.stop());if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;screenStream=null;started=false;micOn=false;cameraOn=false;$('preview').srcObject=null;$('preview').style.display='none';$('welcome').style.display='block';$('stageLabel').hidden=true;$('micBtn').classList.remove('active');$('micBtn').innerHTML='<span class="ico">♩</span> Microphone';$('cameraBtn').classList.remove('active');$('cameraBtn').innerHTML='<span class="ico">◉</span> Camera';$('shareBtn').classList.remove('active');$('shareBtn').innerHTML='<span class="ico">▧</span> Share screen';$('startBtn').innerHTML='<span>↗</span> Start a lesson';$('roomStatus').textContent='Room not started';$('statusDot').classList.remove('on');$('youStatus').textContent='Ready to teach';toast('Lesson ended. Come back whenever you are ready.')});
+<script type="module">
+import { Room, RoomEvent, Track, createLocalAudioTrack, createLocalVideoTrack, createLocalScreenTracks } from "https://esm.sh/livekit-client@2";
+
+const $ = id => document.getElementById(id);
+let roomConnection = null;
+let localAudioTrack = null;
+let localVideoTrack = null;
+let screenTrack = null;
+let started = false;
+let micOn = false;
+let cameraOn = false;
+const params = new URLSearchParams(location.search);
+const studentMode = params.get("role") === "student";
+const roomCode = params.get("room") || Math.random().toString(36).slice(2, 8).toUpperCase();
+const invite = new URL(location.href);
+invite.searchParams.set("room", roomCode);
+invite.searchParams.set("role", "student");
+$("inviteLink").value = invite.href;
+
+if (studentMode) {
+  document.body.classList.add("student-mode");
+  document.title = "Join lesson · Betty";
+  document.querySelector(".profile strong").textContent = "Student view";
+  document.querySelector(".profile span").textContent = "Joining lesson";
+  document.querySelector(".kicker").textContent = "You’re in the right place";
+  document.querySelector("h1").innerHTML = "Welcome to the<br><em>lesson room.</em>";
+  document.querySelector(".hero p").textContent = "You’ve opened the invitation for room " + roomCode + ". Connecting you to your teacher now.";
+  document.querySelector(".room-title").lastChild.textContent = " Lesson room · " + roomCode;
+  $("roomStatus").textContent = "Connecting to lesson…";
+  $("welcome").querySelector(".eyebrow").textContent = "Student classroom";
+  $("welcome").querySelector("h2").textContent = "Your lesson starts here.";
+  $("welcome").querySelector("p").textContent = "The teacher’s camera, microphone, and shared screen will appear here when they join.";
+  $("stageLabel").hidden = true;
+  $("studentNotice").textContent = "You’re joining the live lesson. Keep this page open while your teacher teaches.";
+  $("studentNotice").style.display = "block";
+}
+
+function toast(message) {
+  $("toast").textContent = message;
+  $("toast").classList.add("show");
+  clearTimeout(window.toastTimer);
+  window.toastTimer = setTimeout(() => $("toast").classList.remove("show"), 3500);
+}
+
+function showWelcome() {
+  const stage = document.querySelector(".stage");
+  if (!stage.querySelector("video.remote-track") && !localVideoTrack && !screenTrack) {
+    $("preview").style.display = "none";
+    $("welcome").style.display = "block";
+    $("stageLabel").hidden = true;
+  }
+}
+
+function showLocalTrack(track, label) {
+  const preview = $("preview");
+  preview.srcObject = null;
+  track.attach(preview);
+  preview.muted = true;
+  preview.style.display = "block";
+  $("welcome").style.display = "none";
+  $("stageLabel").hidden = false;
+  $("stageLabel").textContent = "●  " + label;
+}
+
+function setConnectedStatus(text) {
+  $("roomStatus").textContent = text;
+  $("statusDot").classList.add("on");
+  if (!studentMode) $("youStatus").textContent = "Connected to live lesson";
+}
+
+async function connectToRoom() {
+  if (roomConnection && roomConnection.state === "connected") return roomConnection;
+  $("roomStatus").textContent = "Connecting…";
+  const response = await fetch("/api/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      room: roomCode,
+      role: studentMode ? "student" : "teacher",
+      identity: (studentMode ? "student-" : "teacher-") + Math.random().toString(36).slice(2, 9)
+    })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Could not get a room access token.");
+
+  const liveRoom = new Room({ adaptiveStream: true, dynacast: true });
+  liveRoom.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+    if (track.kind === Track.Kind.Video) {
+      const element = track.attach();
+      element.classList.add("remote-track");
+      if (publication.source === Track.Source.ScreenShare) element.classList.add("screen-track");
+      else element.classList.add("camera-track");
+      element.dataset.participant = participant.identity;
+      document.querySelector(".stage").appendChild(element);
+      $("welcome").style.display = "none";
+      $("stageLabel").hidden = false;
+      $("stageLabel").textContent = publication.source === Track.Source.ScreenShare
+        ? "●  TEACHER’S SHARED SCREEN"
+        : "●  LIVE CLASSROOM";
+      setConnectedStatus("Live lesson connected");
+      if (studentMode) $("studentNotice").textContent = "Connected! You can watch and listen to the lesson here.";
+    } else if (track.kind === Track.Kind.Audio) {
+      const element = track.attach();
+      element.autoplay = true;
+      element.dataset.participant = participant.identity;
+      document.body.appendChild(element);
+      setConnectedStatus("Live lesson connected");
+      if (studentMode) $("studentNotice").textContent = "Connected! You can watch and listen to the lesson here.";
+    }
+  });
+  liveRoom.on(RoomEvent.TrackUnsubscribed, track => {
+    track.detach().forEach(element => element.remove());
+    showWelcome();
+  });
+  liveRoom.on(RoomEvent.ParticipantConnected, participant => {
+    if (studentMode) toast((participant.name || "Your teacher") + " joined the lesson.");
+  });
+  liveRoom.on(RoomEvent.Disconnected, () => {
+    $("roomStatus").textContent = "Disconnected";
+    $("statusDot").classList.remove("on");
+  });
+  await liveRoom.connect(data.url, data.token);
+  roomConnection = liveRoom;
+  setConnectedStatus("Connected · " + roomCode);
+  if (!studentMode) {
+    started = true;
+    $("startBtn").innerHTML = "<span>✓</span> Lesson started";
+    toast("Lesson is live. Send Betty the invite link.");
+  } else {
+    $("studentNotice").textContent = "You’re connected to the room. The teacher’s video, audio, or shared screen will appear when they publish it.";
+  }
+  return liveRoom;
+}
+
+async function startLesson() {
+  try {
+    if (started && roomConnection?.state === "connected") return;
+    await connectToRoom();
+  } catch (error) {
+    $("roomStatus").textContent = "Connection failed";
+    $("statusDot").classList.remove("on");
+    toast(error.message || "Could not connect. Check LiveKit settings in Vercel.");
+  }
+}
+$("startBtn").addEventListener("click", startLesson);
+
+async function copyInvite() {
+  try {
+    await navigator.clipboard.writeText($("inviteLink").value);
+    toast("Invite link copied. Send it to Betty!");
+  } catch (error) {
+    $("inviteLink").focus();
+    $("inviteLink").select();
+    toast("Your link is selected — copy it to share with Betty.");
+  }
+}
+$("copyBtn").addEventListener("click", copyInvite);
+$("copyTop").addEventListener("click", copyInvite);
+
+$("micBtn").addEventListener("click", async () => {
+  try {
+    const liveRoom = await connectToRoom();
+    if (!localAudioTrack) {
+      localAudioTrack = await createLocalAudioTrack();
+      await liveRoom.localParticipant.publishTrack(localAudioTrack);
+      micOn = true;
+    } else if (micOn) {
+      await liveRoom.localParticipant.unpublishTrack(localAudioTrack);
+      localAudioTrack.stop();
+      localAudioTrack = null;
+      micOn = false;
+    } else {
+      localAudioTrack = await createLocalAudioTrack();
+      await liveRoom.localParticipant.publishTrack(localAudioTrack);
+      micOn = true;
+    }
+    $("micBtn").classList.toggle("active", micOn);
+    $("micBtn").innerHTML = micOn ? '<span class="ico">♩</span> Mic on' : '<span class="ico">♩</span> Microphone';
+    toast(micOn ? "Microphone is live in the lesson." : "Microphone muted.");
+  } catch (error) { toast(error.message || "Microphone permission was not granted."); }
+});
+
+$("cameraBtn").addEventListener("click", async () => {
+  try {
+    const liveRoom = await connectToRoom();
+    if (localVideoTrack) {
+      await liveRoom.localParticipant.unpublishTrack(localVideoTrack);
+      localVideoTrack.stop();
+      localVideoTrack = null;
+      cameraOn = false;
+      $("preview").srcObject = null;
+      showWelcome();
+    } else {
+      localVideoTrack = await createLocalVideoTrack();
+      await liveRoom.localParticipant.publishTrack(localVideoTrack);
+      cameraOn = true;
+      showLocalTrack(localVideoTrack, "CAMERA PREVIEW");
+    }
+    $("cameraBtn").classList.toggle("active", cameraOn);
+    $("cameraBtn").innerHTML = cameraOn ? '<span class="ico">◉</span> Camera on' : '<span class="ico">◉</span> Camera';
+  } catch (error) { toast(error.message || "Camera permission was not granted."); }
+});
+
+async function stopShare() {
+  if (screenTrack) {
+    try { await roomConnection?.localParticipant.unpublishTrack(screenTrack); } catch (error) {}
+    screenTrack.stop();
+    screenTrack = null;
+  }
+  $("shareBtn").classList.remove("active");
+  $("shareBtn").innerHTML = '<span class="ico">▧</span> Share screen';
+  if (localVideoTrack) showLocalTrack(localVideoTrack, "CAMERA PREVIEW");
+  else showWelcome();
+}
+$("shareBtn").addEventListener("click", async () => {
+  if (screenTrack) { await stopShare(); return; }
+  try {
+    const liveRoom = await connectToRoom();
+    const tracks = await createLocalScreenTracks({ audio: false });
+    screenTrack = tracks.find(track => track.kind === Track.Kind.Video);
+    if (!screenTrack) throw new Error("No screen track was created.");
+    await liveRoom.localParticipant.publishTrack(screenTrack);
+    showLocalTrack(screenTrack, "SCREEN SHARING");
+    $("shareBtn").classList.add("active");
+    $("shareBtn").innerHTML = '<span class="ico">▧</span> Stop sharing';
+    screenTrack.mediaStreamTrack.addEventListener("ended", stopShare, { once: true });
+  } catch (error) {
+    toast(error.message || "Screen sharing was cancelled or is unavailable.");
+  }
+});
+
+$("endBtn").addEventListener("click", async () => {
+  try {
+    if (screenTrack) await stopShare();
+    if (localVideoTrack) {
+      try { await roomConnection?.localParticipant.unpublishTrack(localVideoTrack); } catch (error) {}
+      localVideoTrack.stop();
+      localVideoTrack = null;
+    }
+    if (localAudioTrack) {
+      try { await roomConnection?.localParticipant.unpublishTrack(localAudioTrack); } catch (error) {}
+      localAudioTrack.stop();
+      localAudioTrack = null;
+    }
+    if (roomConnection) await roomConnection.disconnect();
+  } finally {
+    roomConnection = null;
+    started = false;
+    micOn = false;
+    cameraOn = false;
+    $("preview").srcObject = null;
+    $("preview").style.display = "none";
+    $("welcome").style.display = "block";
+    $("stageLabel").hidden = true;
+    document.querySelectorAll(".remote-track").forEach(element => element.remove());
+    $("micBtn").classList.remove("active");
+    $("micBtn").innerHTML = '<span class="ico">♩</span> Microphone';
+    $("cameraBtn").classList.remove("active");
+    $("cameraBtn").innerHTML = '<span class="ico">◉</span> Camera';
+    $("shareBtn").classList.remove("active");
+    $("shareBtn").innerHTML = '<span class="ico">▧</span> Share screen';
+    $("startBtn").innerHTML = '<span>↗</span> Start a lesson';
+    $("roomStatus").textContent = "Room not started";
+    $("statusDot").classList.remove("on");
+    $("youStatus").textContent = "Ready to teach";
+    toast("You left the lesson room.");
+  }
+});
+
+if (studentMode) {
+  connectToRoom().catch(error => {
+    $("roomStatus").textContent = "Could not connect";
+    $("studentNotice").textContent = "Could not connect to the live room: " + (error.message || "Please check the connection and try again.");
+    toast(error.message || "Could not join the lesson.");
+  });
+}
 </script></body></html>

@@ -18,6 +18,12 @@
 .stage.has-screen-share video.remote-track.screen-track{z-index:4;inset:0;width:100%;height:100%;object-fit:contain;background:#101710}
 .stage.has-screen-share video.remote-track.camera-track{z-index:6;inset:auto 16px 16px auto;width:clamp(110px,20%,240px);height:auto;aspect-ratio:4/3;object-fit:cover;border:2px solid #fff;border-radius:12px;box-shadow:0 6px 22px #0006;resize:both;overflow:hidden;cursor:move;min-width:90px;min-height:68px;max-width:45%;max-height:45%}
 .student-mode .stage.has-screen-share video.remote-track.camera-track{width:clamp(100px,22%,220px)}
+/* Keep the local camera visible as a small self-view, while remote cameras become PiP beside shared content. */
+.stage video.local-self-preview{display:block;z-index:8;inset:auto auto 16px 16px;width:clamp(90px,17%,190px);height:auto;aspect-ratio:4/3;object-fit:cover;border:2px solid #fff;border-radius:12px;box-shadow:0 6px 22px #0006;background:#18231b;cursor:move;resize:both;overflow:hidden;min-width:80px;min-height:60px;max-width:38%;max-height:38%}
+.stage.has-screen-share video.remote-track.camera-track{inset:auto 16px 16px auto;width:clamp(100px,17%,200px);height:auto;aspect-ratio:4/3;object-fit:cover;border:2px solid #fff;border-radius:12px;box-shadow:0 6px 22px #0006;max-width:38%;max-height:38%}
+.stage.has-screen-share video.local-self-preview{inset:auto auto 16px 16px}
+.stage:fullscreen video.local-self-preview{width:clamp(100px,14%,220px)}
+@media(max-width:600px){.stage video.local-self-preview{width:clamp(84px,27%,145px);bottom:10px;left:10px}.stage.has-screen-share video.remote-track.camera-track{width:clamp(90px,27%,145px);right:10px;bottom:10px}.stage.has-screen-share video.local-self-preview{left:10px;bottom:10px}}
 #lessonNotes{font-family:inherit}.student-mode .stage video.remote-track{object-fit:contain}.stage audio{display:none}\n</style>
 </head>
 <body><div class="wrap">
@@ -92,6 +98,33 @@ function showLocalTrack(track, label) {
   $("welcome").style.display = "none";
   $("stageLabel").hidden = false;
   $("stageLabel").textContent = "●  " + label;
+}
+
+function showSelfPreview(track) {
+  const stage = document.querySelector(".stage");
+  let selfView = stage.querySelector("video.local-self-preview");
+  if (!selfView) {
+    selfView = document.createElement("video");
+    selfView.className = "local-self-preview";
+    selfView.autoplay = true;
+    selfView.playsInline = true;
+    selfView.muted = true;
+    selfView.setAttribute("aria-label", "Your camera preview");
+    stage.appendChild(selfView);
+  }
+  selfView.srcObject = null;
+  track.attach(selfView);
+  selfView.muted = true;
+  selfView.style.display = "block";
+}
+function hideSelfPreview() {
+  const selfView = document.querySelector(".stage video.local-self-preview");
+  if (selfView) {
+    if (localVideoTrack) {
+      try { localVideoTrack.detach(selfView); } catch (error) {}
+    }
+    selfView.remove();
+  }
 }
 
 function setConnectedStatus(text) {
@@ -308,6 +341,7 @@ $("cameraBtn").addEventListener("click", async () => {
       localVideoTrack.stop();
       localVideoTrack = null;
       cameraOn = false;
+      hideSelfPreview();
       $("preview").srcObject = null;
       showWelcome();
     } else {
@@ -315,6 +349,7 @@ $("cameraBtn").addEventListener("click", async () => {
       await liveRoom.localParticipant.publishTrack(localVideoTrack);
       cameraOn = true;
       showLocalTrack(localVideoTrack, "CAMERA PREVIEW");
+      showSelfPreview(localVideoTrack);
     }
     $("cameraBtn").classList.toggle("active", cameraOn);
     $("cameraBtn").innerHTML = cameraOn ? '<span class="ico">◉</span> Camera on' : '<span class="ico">◉</span> Camera';
@@ -356,6 +391,7 @@ $("endBtn").addEventListener("click", async () => {
       try { await roomConnection?.localParticipant.unpublishTrack(localVideoTrack); } catch (error) {}
       localVideoTrack.stop();
       localVideoTrack = null;
+      hideSelfPreview();
     }
     if (localAudioTrack) {
       try { await roomConnection?.localParticipant.unpublishTrack(localAudioTrack); } catch (error) {}
@@ -372,7 +408,8 @@ $("endBtn").addEventListener("click", async () => {
     $("preview").style.display = "none";
     $("welcome").style.display = "block";
     $("stageLabel").hidden = true;
-    document.querySelectorAll(".remote-track").forEach(element => element.remove());
+    document.querySelectorAll(".remote-track, .local-self-preview").forEach(element => element.remove());
+    document.querySelector(".stage").classList.remove("has-screen-share");
     $("micBtn").classList.remove("active");
     $("micBtn").innerHTML = '<span class="ico">♩</span> Microphone';
     $("cameraBtn").classList.remove("active");

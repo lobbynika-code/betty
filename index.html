@@ -110,7 +110,7 @@ async function connectToRoom() {
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || "Could not get a room access token.");
 
-  const liveRoom = new Room({ adaptiveStream: true, dynacast: true, videoCaptureDefaults: { resolution: VideoPresets.h720.resolution } });
+  const liveRoom = new Room({ adaptiveStream: false, dynacast: false, videoCaptureDefaults: { resolution: VideoPresets.h720.resolution } });
   liveRoom.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
     if (track.kind === Track.Kind.Video) {
       const element = track.attach();
@@ -297,10 +297,10 @@ $("shareBtn").addEventListener("click", async () => {
   if (screenTrack) { await stopShare(); return; }
   try {
     const liveRoom = await connectToRoom();
-    const tracks = await createLocalScreenTracks({ audio: false, resolution: VideoPresets.h1080.resolution, videoEncoding: { maxBitrate: 5_000_000, maxFramerate: 30 } });
+    const tracks = await createLocalScreenTracks({ audio: false, resolution: VideoPresets.h1080.resolution, contentHint: "detail" });
     screenTrack = tracks.find(track => track.kind === Track.Kind.Video);
     if (!screenTrack) throw new Error("No screen track was created.");
-    await liveRoom.localParticipant.publishTrack(screenTrack);
+    await liveRoom.localParticipant.publishTrack(screenTrack, { videoEncoding: { maxBitrate: 5_000_000, maxFramerate: 30 }, simulcast: false });
     showLocalTrack(screenTrack, "SCREEN SHARING");
     $("shareBtn").classList.add("active");
     $("shareBtn").innerHTML = '<span class="ico">▧</span> Stop sharing';

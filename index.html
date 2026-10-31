@@ -18,6 +18,9 @@
 .stage.has-screen-share video.remote-track.screen-track{z-index:4;inset:0;width:100%;height:100%;object-fit:contain;background:#101710}
 .stage.has-screen-share video.remote-track.camera-track{z-index:6;inset:auto 16px 16px auto;width:clamp(110px,20%,240px);height:auto;aspect-ratio:4/3;object-fit:cover;border:2px solid #fff;border-radius:12px;box-shadow:0 6px 22px #0006;resize:both;overflow:hidden;cursor:move;min-width:90px;min-height:68px;max-width:45%;max-height:45%}
 .student-mode .stage.has-screen-share video.remote-track.camera-track{width:clamp(100px,22%,220px)}
+/* Movable picture-in-picture camera windows */
+.stage video.local-self-preview,.stage video.remote-track.camera-track{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.stage video.local-self-preview:active,.stage video.remote-track.camera-track:active{cursor:grabbing}
 /* Keep the local camera visible as a small self-view, while remote cameras become PiP beside shared content. */
 .stage video.local-self-preview{display:block;z-index:8;inset:auto auto 16px 16px;width:clamp(90px,17%,190px);height:auto;aspect-ratio:4/3;object-fit:cover;border:2px solid #fff;border-radius:12px;box-shadow:0 6px 22px #0006;background:#18231b;cursor:move;resize:both;overflow:hidden;min-width:80px;min-height:60px;max-width:38%;max-height:38%}
 .stage.has-screen-share video.remote-track.camera-track{inset:auto 16px 16px auto;width:clamp(100px,17%,200px);height:auto;aspect-ratio:4/3;object-fit:cover;border:2px solid #fff;border-radius:12px;box-shadow:0 6px 22px #0006;max-width:38%;max-height:38%}
@@ -126,6 +129,42 @@ function hideSelfPreview() {
     selfView.remove();
   }
 }
+
+// Drag camera picture-in-picture windows anywhere within the lesson stage.
+function enableMovableCameraViews() {
+  const stage = document.querySelector(".stage");
+  let drag = null;
+  stage.addEventListener("pointerdown", event => {
+    const view = event.target.closest("video.local-self-preview, video.remote-track.camera-track");
+    if (!view || !stage.contains(view)) return;
+    event.preventDefault();
+    const stageRect = stage.getBoundingClientRect();
+    const viewRect = view.getBoundingClientRect();
+    view.style.right = "auto";
+    view.style.bottom = "auto";
+    view.style.left = (viewRect.left - stageRect.left) + "px";
+    view.style.top = (viewRect.top - stageRect.top) + "px";
+    drag = { view, pointerId: event.pointerId, offsetX: event.clientX - viewRect.left, offsetY: event.clientY - viewRect.top };
+    try { view.setPointerCapture(event.pointerId); } catch (error) {}
+  });
+  stage.addEventListener("pointermove", event => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const stageRect = stage.getBoundingClientRect();
+    const viewRect = drag.view.getBoundingClientRect();
+    const maxLeft = Math.max(0, stage.clientWidth - viewRect.width);
+    const maxTop = Math.max(0, stage.clientHeight - viewRect.height);
+    const left = Math.min(maxLeft, Math.max(0, event.clientX - stageRect.left - drag.offsetX));
+    const top = Math.min(maxTop, Math.max(0, event.clientY - stageRect.top - drag.offsetY));
+    drag.view.style.left = left + "px";
+    drag.view.style.top = top + "px";
+  });
+  const finishDrag = event => {
+    if (drag && event.pointerId === drag.pointerId) drag = null;
+  };
+  stage.addEventListener("pointerup", finishDrag);
+  stage.addEventListener("pointercancel", finishDrag);
+}
+enableMovableCameraViews();
 
 function setConnectedStatus(text) {
   $("roomStatus").textContent = text;

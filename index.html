@@ -13,16 +13,21 @@
 .student-mode .student-notice{display:block}
 .student-notice{display:none;margin:0 0 14px;padding:13px 15px;border-radius:12px;background:#fff3df;border:1px solid #f0dfbf;color:#78582b;font-size:12px;line-height:1.65}
 @media(max-width:600px){.student-mode .stage{min-height:360px}}
-.stage video.remote-track{display:block;z-index:4;background:#18231b}.stage video.remote-track.camera-track{z-index:3}.stage video.remote-track.screen-track{z-index:4;object-fit:contain;max-width:100%;max-height:100%;}.student-mode .stage video.remote-track{object-fit:contain}.stage audio{display:none}\n</style>
+.stage video.remote-track{display:block;z-index:4;background:#18231b}.stage video.remote-track.camera-track{z-index:3}.stage video.remote-track.screen-track{z-index:4;object-fit:contain;max-width:100%;max-height:100%;}
+/* Screen share is the main canvas; camera stays as a movable, resizable picture-in-picture. */
+.stage.has-screen-share video.remote-track.screen-track{z-index:4;inset:0;width:100%;height:100%;object-fit:contain;background:#101710}
+.stage.has-screen-share video.remote-track.camera-track{z-index:6;inset:auto 16px 16px auto;width:clamp(110px,20%,240px);height:auto;aspect-ratio:4/3;object-fit:cover;border:2px solid #fff;border-radius:12px;box-shadow:0 6px 22px #0006;resize:both;overflow:hidden;cursor:move;min-width:90px;min-height:68px;max-width:45%;max-height:45%}
+.student-mode .stage.has-screen-share video.remote-track.camera-track{width:clamp(100px,22%,220px)}
+#lessonNotes{font-family:inherit}.student-mode .stage video.remote-track{object-fit:contain}.stage audio{display:none}\n</style>
 </head>
 <body><div class="wrap">
 <header class="topbar"><a class="brand" href="#" aria-label="Betty home"><div class="mark">b.</div><div>betty<small>LEARN BEAUTIFULLY</small></div></a><nav class="nav"><a href="#room">Classroom</a><a href="#people">People</a><div class="profile"><div class="profile-avatar">Y</div><div><strong>Your classroom</strong><span>Teacher account</span></div></div></nav></header>
 <section class="hero"><div><div class="kicker">A little room to grow</div><h1>Good things happen<br>when we <em>learn together.</em></h1><p>Your own cozy corner for lessons, ideas, and little breakthroughs. Start a room, invite Betty, and show her how it's done.</p></div><div class="hero-actions teacher-only"><button class="btn btn-primary" id="startBtn"><span>↗</span> Start a lesson</button><button class="btn btn-light" id="copyTop"><span>↗</span> Invite Betty</button></div></section>
 <main class="main-grid" id="room"><section class="room-card"><div class="room-top"><div class="room-title"><span class="tiny-mark">✳</span> Your lesson room</div><div class="room-status"><span class="dot" id="statusDot"></span><span id="roomStatus">Room not started</span></div></div><div class="stage"><video id="preview" autoplay playsinline muted></video><div class="welcome" id="welcome"><div class="welcome-icon">✳</div><div class="eyebrow">Your shared space</div><h2>Ready when you are.</h2><p>Start a lesson, then share your screen to bring Betty along. This is where your next little breakthrough begins.</p></div><span class="stage-label" id="stageLabel" hidden>● &nbsp; YOUR PREVIEW</span></div><div class="student-notice" id="studentNotice">You’ve joined the lesson room. The live teacher connection is not configured yet, so the teacher’s screen and audio won’t appear here until live streaming is connected.</div>
-<div class="student-controls" id="studentControls"><button class="control" id="studentMicBtn"><span class="ico">♩</span> Talk to teacher</button><button class="control" id="fullscreenBtn"><span class="ico">⛶</span> Full screen</button></div><div class="controls teacher-only"><button class="control" id="micBtn"><span class="ico">♩</span> Microphone</button><button class="control" id="cameraBtn"><span class="ico">◉</span> Camera</button><button class="control" id="shareBtn"><span class="ico">▧</span> Share screen</button><button class="control end" id="endBtn"><span class="ico">×</span> End lesson</button></div></section>
+<div class="student-controls" id="studentControls"><button class="control" id="studentMicBtn"><span class="ico">♩</span> Talk to teacher</button><button class="control" id="studentShareBtn"><span class="ico">▧</span> Share my screen</button><button class="control" id="fullscreenBtn"><span class="ico">⛶</span> Full screen</button></div><div class="controls teacher-only"><button class="control" id="micBtn"><span class="ico">♩</span> Microphone</button><button class="control" id="cameraBtn"><span class="ico">◉</span> Camera</button><button class="control" id="shareBtn"><span class="ico">▧</span> Share screen</button><button class="control end" id="endBtn"><span class="ico">×</span> End lesson</button></div></section>
 <aside class="sidebar"><section class="side-card teacher-only"><div class="side-heading"><h3>Bring Betty in</h3><span class="count">YOUR INVITE</span></div><p class="side-copy">One little link is all she needs to find her way into the classroom.</p><div class="invite-row"><input id="inviteLink" aria-label="Lesson invitation link" readonly><button class="copy" id="copyBtn">Copy link</button></div></section>
 <section class="side-card" id="people"><div class="side-heading"><h3>Who's in the room</h3><span class="count">2 PEOPLE</span></div><div class="people"><div class="person"><div class="person-avatar">Y</div><div class="person-info"><strong>You · Teacher</strong><small id="youStatus">Ready to teach</small></div><span class="person-state">You</span></div><div class="person"><div class="person-avatar betty">B</div><div class="person-info"><strong>Betty</strong><small id="bettyStatus">Waiting for invite</small></div><span class="person-state">Guest</span></div></div></section>
-<section class="side-card"><div class="side-heading"><h3>Little lesson notes</h3><span class="count">NOTES</span></div><div class="chat-preview"><div class="chat-symbol">✎</div><p id="notesText">Keep your key ideas nearby. A shared live chat and lesson notes are coming in the next version.</p></div></section>
+<section class="side-card"><div class="side-heading"><h3>Little lesson notes</h3><span class="count" id="notesStatus">SAVED ON THIS DEVICE</span></div><p class="side-copy" style="margin-bottom:10px">Write lesson notes here. They save automatically in this browser.</p><textarea id="lessonNotes" aria-label="Lesson notes" placeholder="Write key ideas, questions, and next steps…" style="display:block;width:100%;min-height:145px;resize:vertical;border:1px solid var(--line);border-radius:12px;background:#faf8f2;padding:12px;font:12px/1.6 inherit;color:var(--ink)"></textarea></section>
 <div class="tip"><strong>✳ A gentle reminder</strong><span>Your browser will ask permission before turning on your camera, microphone, or screen share. You stay in control.</span></div></aside></main>
 <footer class="bottom"><span>Made with care, just for Betty <b>♥</b></span><span>BETTY CLASSROOM &nbsp;·&nbsp; LEARN AT YOUR OWN PACE</span></footer></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script type="module">
@@ -119,6 +124,7 @@ async function connectToRoom() {
       else element.classList.add("camera-track");
       element.dataset.participant = participant.identity;
       document.querySelector(".stage").appendChild(element);
+      if (publication.source === Track.Source.ScreenShare) document.querySelector(".stage").classList.add("has-screen-share");
       $("welcome").style.display = "none";
       $("stageLabel").hidden = false;
       $("stageLabel").textContent = publication.source === Track.Source.ScreenShare
@@ -137,12 +143,15 @@ async function connectToRoom() {
   });
   liveRoom.on(RoomEvent.TrackUnsubscribed, track => {
     track.detach().forEach(element => element.remove());
+    const stage = document.querySelector(".stage");
+    if (!stage.querySelector("video.screen-track")) stage.classList.remove("has-screen-share");
     showWelcome();
   });
   liveRoom.on(RoomEvent.ParticipantConnected, participant => {
     if (studentMode) toast((participant.name || "Your teacher") + " joined the lesson.");
   });
   liveRoom.on(RoomEvent.Disconnected, () => {
+    document.querySelector(".stage").classList.remove("has-screen-share");
     $("roomStatus").textContent = "Disconnected";
     $("statusDot").classList.remove("on");
   });
@@ -199,6 +208,36 @@ $("studentMicBtn").addEventListener("click", async () => {
     }
   } catch (error) {
     toast(error.message || "Please allow microphone access to talk to your teacher.");
+  }
+});
+
+let studentScreenTrack = null;
+$("studentShareBtn").addEventListener("click", async () => {
+  try {
+    const liveRoom = await connectToRoom();
+    if (studentScreenTrack) {
+      await liveRoom.localParticipant.unpublishTrack(studentScreenTrack);
+      studentScreenTrack.stop();
+      studentScreenTrack = null;
+      $("studentShareBtn").classList.remove("active");
+      $("studentShareBtn").innerHTML = '<span class="ico">▧</span> Share my screen';
+      toast("Screen sharing stopped.");
+      return;
+    }
+    const tracks = await createLocalScreenTracks({ audio: false, resolution: VideoPresets.h1080.resolution, contentHint: "detail" });
+    studentScreenTrack = tracks.find(track => track.kind === Track.Kind.Video);
+    if (!studentScreenTrack) throw new Error("No screen track was created.");
+    await liveRoom.localParticipant.publishTrack(studentScreenTrack, { videoEncoding: { maxBitrate: 5_000_000, maxFramerate: 30 }, simulcast: false });
+    $("studentShareBtn").classList.add("active");
+    $("studentShareBtn").innerHTML = '<span class="ico">▧</span> Stop sharing';
+    studentScreenTrack.mediaStreamTrack.addEventListener("ended", () => {
+      studentScreenTrack = null;
+      $("studentShareBtn").classList.remove("active");
+      $("studentShareBtn").innerHTML = '<span class="ico">▧</span> Share my screen';
+    }, { once: true });
+    toast("Your screen is being shared with the teacher.");
+  } catch (error) {
+    toast(error.message || "Screen sharing was cancelled or is unavailable.");
   }
 });
 
@@ -347,6 +386,21 @@ $("endBtn").addEventListener("click", async () => {
     toast("You left the lesson room.");
   }
 });
+
+// Notes are editable and autosaved locally in this browser.
+const notesBox = $("lessonNotes");
+if (notesBox) {
+  const notesKey = "betty-lesson-notes-" + roomCode;
+  try { notesBox.value = localStorage.getItem(notesKey) || ""; } catch (error) {}
+  notesBox.addEventListener("input", () => {
+    try {
+      localStorage.setItem(notesKey, notesBox.value);
+      $("notesStatus").textContent = "SAVED";
+    } catch (error) {
+      $("notesStatus").textContent = "NOT SAVED";
+    }
+  });
+}
 
 if (studentMode) {
   connectToRoom().catch(error => {

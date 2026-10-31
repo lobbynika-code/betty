@@ -52,7 +52,10 @@ let micOn = false;
 let cameraOn = false;
 const params = new URLSearchParams(location.search);
 const studentMode = params.get("role") === "student";
-const roomCode = params.get("room") || Math.random().toString(36).slice(2, 8).toUpperCase();
+const savedRoomCode = (() => { try { return localStorage.getItem("betty-teacher-room-code"); } catch (error) { return null; } })();
+const roomCode = params.get("room") || savedRoomCode || Math.random().toString(36).slice(2, 8).toUpperCase();
+if (!studentMode) { try { localStorage.setItem("betty-teacher-room-code", roomCode); } catch (error) {} }
+const activeLessonKey = "betty-active-lesson-" + roomCode;
 const invite = new URL(location.href);
 invite.searchParams.set("room", roomCode);
 invite.searchParams.set("role", "student");
@@ -134,21 +137,24 @@ function hideSelfPreview() {
 function enableMovableCameraViews() {
   const stage = document.querySelector(".stage");
   let drag = null;
+  // Use one delegated handler and move the existing video element; never clone or re-attach a track.
   stage.addEventListener("pointerdown", event => {
     const view = event.target.closest("video.local-self-preview, video.remote-track.camera-track");
-    if (!view || !stage.contains(view)) return;
+    if (!view || !stage.contains(view) || event.button > 0) return;
     event.preventDefault();
+    event.stopPropagation();
     const stageRect = stage.getBoundingClientRect();
     const viewRect = view.getBoundingClientRect();
+    view.style.inset = "auto";
     view.style.right = "auto";
     view.style.bottom = "auto";
     view.style.left = (viewRect.left - stageRect.left) + "px";
     view.style.top = (viewRect.top - stageRect.top) + "px";
     drag = { view, pointerId: event.pointerId, offsetX: event.clientX - viewRect.left, offsetY: event.clientY - viewRect.top };
-    try { view.setPointerCapture(event.pointerId); } catch (error) {}
+    try { stage.setPointerCapture(event.pointerId); } catch (error) {}
   });
   stage.addEventListener("pointermove", event => {
-    if (!drag || event.pointerId !== drag.pointerId) return;
+    if (!drag || event.pointerId !== drag.pointerId || !drag.view.isConnected) return;
     const stageRect = stage.getBoundingClientRect();
     const viewRect = drag.view.getBoundingClientRect();
     const maxLeft = Math.max(0, stage.clientWidth - viewRect.width);
@@ -159,10 +165,14 @@ function enableMovableCameraViews() {
     drag.view.style.top = top + "px";
   });
   const finishDrag = event => {
-    if (drag && event.pointerId === drag.pointerId) drag = null;
+    if (drag && event.pointerId === drag.pointerId) {
+      try { if (stage.hasPointerCapture(event.pointerId)) stage.releasePointerCapture(event.pointerId); } catch (error) {}
+      drag = null;
+    }
   };
   stage.addEventListener("pointerup", finishDrag);
   stage.addEventListener("pointercancel", finishDrag);
+  stage.addEventListener("lostpointercapture", () => { drag = null; });
 }
 enableMovableCameraViews();
 
@@ -190,12 +200,20 @@ async function connectToRoom() {
   const liveRoom = new Room({ adaptiveStream: false, dynacast: false, videoCaptureDefaults: { resolution: VideoPresets.h720.resolution } });
   liveRoom.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
     if (track.kind === Track.Kind.Video) {
+      const stage = document.querySelector(".stage");
+      const trackClass = publication.source === Track.Source.ScreenShare ? "screen-track" : "camera-track";
+      // Replace any stale element for this participant/source before attaching the current track.
+      stage.querySelectorAll("video.remote-track").forEach(existing => {
+        if (existing.dataset.participant === participant.identity && existing.classList.contains(trackClass)) {
+          try { track.detach(existing); } catch (error) {}
+          existing.remove();
+        }
+      });
       const element = track.attach();
-      element.classList.add("remote-track");
-      if (publication.source === Track.Source.ScreenShare) element.classList.add("screen-track");
-      else element.classList.add("camera-track");
+      element.classList.add("remote-track", trackClass);
       element.dataset.participant = participant.identity;
-      document.querySelector(".stage").appendChild(element);
+      element.dataset.trackSid = publication.trackSid || "";
+      stage.appendChild(element);
       if (publication.source === Track.Source.ScreenShare) document.querySelector(".stage").classList.add("has-screen-share");
       $("welcome").style.display = "none";
       $("stageLabel").hidden = false;
@@ -232,8 +250,9 @@ async function connectToRoom() {
   setConnectedStatus("Connected · " + roomCode);
   if (!studentMode) {
     started = true;
-    $("startBtn").innerHTML = "<span>✓</span> Lesson started";
-    toast("Lesson is live. Send Betty the invite link.");
+    try { localStorage.setItem(activeLessonKey, "1"); } catch (error) {}
+    $("startBtn").innerHTML = "<span>✓</span> Reconnected to lesson";
+    toast("You’re back in the lesson. Turn your camera and microphone back on if needed.");
   } else {
     $("studentNotice").textContent = "You’re connected to the room. The teacher’s video, audio, or shared screen will appear when they publish it.";
   }
@@ -441,6 +460,7 @@ $("endBtn").addEventListener("click", async () => {
   } finally {
     roomConnection = null;
     started = false;
+    try { localStorage.removeItem(activeLessonKey); } catch (error) {}
     micOn = false;
     cameraOn = false;
     $("preview").srcObject = null;
@@ -484,5 +504,12 @@ if (studentMode) {
     $("studentNotice").textContent = "Could not connect to the live room: " + (error.message || "Please check the connection and try again.");
     toast(error.message || "Could not join the lesson.");
   });
+} else {
+  let shouldResume = false;
+  try { shouldResume = localStorage.getItem(activeLessonKey) === "1"; } catch (error) {}
+  if (shouldResume) {
+    $("roomStatus").textContent = "Rejoining your lesson…";
+    startLesson();
+  }
 }
 </script></body></html>

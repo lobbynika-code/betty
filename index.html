@@ -13,7 +13,7 @@
 .student-mode .student-notice{display:block}
 .student-notice{display:none;margin:0 0 14px;padding:13px 15px;border-radius:12px;background:#fff3df;border:1px solid #f0dfbf;color:#78582b;font-size:12px;line-height:1.65}
 @media(max-width:600px){.student-mode .stage{min-height:360px}}
-.stage video.remote-track{display:block;z-index:4;background:#18231b}.stage video.remote-track.camera-track{z-index:3}.stage video.remote-track.screen-track{z-index:4;object-fit:contain}.student-mode .stage video.remote-track{object-fit:contain}.stage audio{display:none}\n</style>
+.stage video.remote-track{display:block;z-index:4;background:#18231b}.stage video.remote-track.camera-track{z-index:3}.stage video.remote-track.screen-track{z-index:4;object-fit:contain;max-width:100%;max-height:100%;}.student-mode .stage video.remote-track{object-fit:contain}.stage audio{display:none}\n</style>
 </head>
 <body><div class="wrap">
 <header class="topbar"><a class="brand" href="#" aria-label="Betty home"><div class="mark">b.</div><div>betty<small>LEARN BEAUTIFULLY</small></div></a><nav class="nav"><a href="#room">Classroom</a><a href="#people">People</a><div class="profile"><div class="profile-avatar">Y</div><div><strong>Your classroom</strong><span>Teacher account</span></div></div></nav></header>
@@ -26,7 +26,7 @@
 <div class="tip"><strong>✳ A gentle reminder</strong><span>Your browser will ask permission before turning on your camera, microphone, or screen share. You stay in control.</span></div></aside></main>
 <footer class="bottom"><span>Made with care, just for Betty <b>♥</b></span><span>BETTY CLASSROOM &nbsp;·&nbsp; LEARN AT YOUR OWN PACE</span></footer></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script type="module">
-import { Room, RoomEvent, Track, createLocalAudioTrack, createLocalVideoTrack, createLocalScreenTracks } from "https://esm.sh/livekit-client@2";
+import { Room, RoomEvent, Track, VideoPresets, createLocalAudioTrack, createLocalVideoTrack, createLocalScreenTracks } from "https://esm.sh/livekit-client@2";
 
 const $ = id => document.getElementById(id);
 let roomConnection = null;
@@ -110,7 +110,7 @@ async function connectToRoom() {
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || "Could not get a room access token.");
 
-  const liveRoom = new Room({ adaptiveStream: true, dynacast: true });
+  const liveRoom = new Room({ adaptiveStream: true, dynacast: true, videoCaptureDefaults: { resolution: VideoPresets.h720.resolution } });
   liveRoom.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
     if (track.kind === Track.Kind.Video) {
       const element = track.attach();
@@ -297,7 +297,7 @@ $("shareBtn").addEventListener("click", async () => {
   if (screenTrack) { await stopShare(); return; }
   try {
     const liveRoom = await connectToRoom();
-    const tracks = await createLocalScreenTracks({ audio: false });
+    const tracks = await createLocalScreenTracks({ audio: false, resolution: VideoPresets.h1080.resolution, videoEncoding: { maxBitrate: 5_000_000, maxFramerate: 30 } });
     screenTrack = tracks.find(track => track.kind === Track.Kind.Video);
     if (!screenTrack) throw new Error("No screen track was created.");
     await liveRoom.localParticipant.publishTrack(screenTrack);
